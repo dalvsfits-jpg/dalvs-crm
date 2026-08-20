@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DALVS TEAM — CRM Inteligente</title>
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --surface-2: #1e1e1e; --surface-3: #262626;
+    --border: #333; --border-light: #444;
+    --text: #f5f5f5; --text-2: #b0b0b0; --text-3: #666;
+    --accent: #4ade80; --accent-2: #60a5fa; --warn: #fbbf24; --danger: #f87171;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; }
+  .app { display: flex; min-height: 100vh; }
+  .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 12px; flex-shrink: 0; position: fixed; height: 100vh; overflow-y: auto; }
+  .logo { font-size: 16px; font-weight: 700; padding: 0 8px 16px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  .logo span { font-size: 11px; color: var(--text-3); display: block; font-weight: 400; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; font-size: 13px; color: var(--text-2); cursor: pointer; transition: all 0.15s; margin-bottom: 2px; text-decoration: none; }
+  .nav-item:hover { background: var(--surface-2); color: var(--text); }
+  .nav-item.on { background: var(--text); color: var(--bg); font-weight: 500; }
+  .nav-item svg { width: 16px; height: 16px; }
+  .main { flex: 1; margin-left: 220px; padding: 24px 28px; max-width: calc(100% - 220px); }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .page-title { font-size: 20px; font-weight: 600; }
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; }
+  .btn:hover { background: var(--surface-3); }
+  .btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-danger { border-color: var(--danger); color: var(--danger); }
+  .btn-danger:hover { background: rgba(248,113,113,0.1); }
+  .btn-success { border-color: var(--accent); color: var(--accent); }
+  .btn-success:hover { background: rgba(74,222,128,0.1); }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .kpi { padding: 16px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+  .kpi-val { font-size: 26px; font-weight: 600; }
+  .kpi-lbl { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+  .card { border: 1px solid var(--border); border-radius: 10px; padding: 16px; background: var(--surface); margin-bottom: 12px; }
+  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .table th { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-2); font-weight: 500; font-size: 12px; }
+  .table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-2); }
+  .table tr:hover td { background: var(--surface-2); }
+  .search { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--surface); color: var(--text); width: 260px; }
+  .filters { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .chip { padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); }
+  .chip.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+  .bg-green { background: rgba(74,222,128,0.15); color: var(--accent); }
+  .bg-red { background: rgba(248,113,113,0.15); color: var(--danger); }
+  .bg-yellow { background: rgba(251,191,36,0.15); color: var(--warn); }
+  .bg-blue { background: rgba(96,165,250,0.15); color: var(--accent-2); }
+  .bg-gray { background: var(--surface-2); color: var(--text-3); }
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .tab { padding: 10px 16px; font-size: 13px; cursor: pointer; color: var(--text-3); border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .tab:hover { color: var(--text); }
+  .tab.on { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+  .form-field { margin-bottom: 12px; }
+  .form-field label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
+  .form-field input, .form-field select, .form-field textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--surface); color: var(--text); font-family: inherit; }
+  .form-field textarea { min-height: 80px; resize: vertical; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 200; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 12px; padding: 24px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; border: 1px solid var(--border); }
+  .modal h3 { margin: 0 0 16px; font-size: 16px; font-weight: 600; }
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 18px; border-radius: 10px; background: var(--text); color: var(--bg); font-size: 13px; font-weight: 500; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; z-index: 300; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .timeline { position: relative; padding-left: 20px; }
+  .timeline::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .tl-item { position: relative; padding: 12px 0 12px 16px; }
+  .tl-dot { position: absolute; left: -17px; top: 16px; width: 10px; height: 10px; border-radius: 50%; background: var(--border); border: 2px solid var(--surface); }
+  .tl-dot.done { background: var(--accent); }
+  .tl-dot.current { background: var(--accent-2); }
+  .tl-date { font-size: 11px; color: var(--text-3); }
+  .tl-title { font-size: 13px; font-weight: 500; margin-top: 2px; }
+  .tl-desc { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+  .prompt-box { background: var(--surface-2); border-radius: 8px; padding: 12px; font-size: 13px; color: var(--text-2); white-space: pre-wrap; line-height: 1.6; border: 1px solid var(--border); }
+  .ia-response { background: rgba(74,222,128,0.05); border: 1px solid rgba(74,222,128,0.2); border-radius: 8px; padding: 14px; font-size: 13px; color: var(--text); line-height: 1.7; margin-top: 12px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .empty { text-align: center; padding: 40px; color: var(--text-3); font-size: 13px; }
+  .pipe-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin: 8px 0; }
+  .pipe-seg { flex: 1; margin: 0 1px; border-radius: 2px; }
+  .pipe-seg.done { background: var(--accent); }
+  .pipe-seg.wait { background: var(--surface-2); }
+  .avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--text); }
+  .row-flex { display: flex; align-items: center; gap: 10px; }
+  .hidden { display: none !important; }
+  .action-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  @media (max-width: 768px) {
+    .sidebar { width: 60px; padding: 12px 8px; }
+    .sidebar .logo span, .nav-item span { display: none; }
+    .main { margin-left: 60px; max-width: calc(100% - 60px); padding: 16px; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="logo">DALVS TEAM<span>CRM Inteligente</span></div>
+    <a class="nav-item on" href="#" onclick="go('dashboard');return false;" id="nav-dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Dashboard</span>
+    </a>
+    <a class="nav-item" href="#" onclick="go('alunos');return false;" id="nav-alunos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      <span>Alunos</span>
+    </a>
+    <a class="nav-item" href="#" onclick="go('formularios');return false;" id="nav-formularios">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>Formulários</span>
+    </a>
+    <a class="nav-item" href="#" onclick="go('followup');return false;" id="nav-followup">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span>Follow Up</span>
+    </a>
+    <a class="nav-item" href="#" onclick="go('financeiro');return false;" id="nav-financeiro">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      <span>Financeiro</span>
+    </a>
+    <a class="nav-item" href="#" onclick="go('agente');return false;" id="nav-agente">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-3 3 3 3 0 01-3-3V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      <span>Agente IA</span>
+    </a>
+  </div>
+
+  <div class="main">
+    <!-- DASHBOARD -->
+    <div id="page-dashboard">
+      <div class="header">
+        <div class="page-title">Dashboard</div>
+        <div style="font-size:12px;color:var(--text-3);">Hoje: 20/08/2026</div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-val" id="dash-total">0</div><div class="kpi-lbl">Total de alunos</div></div>
+        <div class="kpi"><div class="kpi-val" id="dash-ativo">0</div><div class="kpi-lbl">Ativos</div></div>
+        <div class="kpi"><div class="kpi-val" id="dash-pend">0</div><div class="kpi-lbl">Ações pendentes hoje</div></div>
+        <div class="kpi"><div class="kpi-val" id="dash-receita">R$ 0</div><div class="kpi-lbl">Receita do mês</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Ações pendentes hoje</div>
+          <div id="dash-acoes"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Alunos por etapa</div>
+          <div id="dash-etapas"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALUNOS -->
+    <div id="page-alunos" class="hidden">
+      <div class="header">
+        <div class="page-title">Alunos</div>
+        <button class="btn btn-primary" onclick="openAlunoModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Novo aluno
+        </button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <input class="search" id="aluno-search" placeholder="Buscar aluno..." oninput="renderAlunos()">
+      </div>
+      <div class="filters" id="aluno-filters">
+        <div class="chip on" onclick="setAlunoFilter('todos',this)">Todos</div>
+        <div class="chip" onclick="setAlunoFilter('ativo',this)">Ativos</div>
+        <div class="chip" onclick="setAlunoFilter('inativo',this)">Inativos</div>
+        <div class="chip" onclick="setAlunoFilter('renovacao',this)">Renovação</div>
+      </div>
+      <div id="alunos-lista"></div>
+    </div>
+
+    <!-- ALUNO DETALHE -->
+    <div id="page-aluno-detalhe" class="hidden">
+      <div class="header">
+        <div class="row-flex">
+          <button class="btn" onclick="go('alunos')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Voltar
+          </button>
+          <div class="page-title" id="det-nome">Aluno</div>
+        </div>
+        <button class="btn" onclick="openAlunoModal(alunoAtualId)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Editar
+        </button>
+      </div>
+      <div class="tabs">
+        <div class="tab on" onclick="setAba('info')" id="tab-info">Informações</div>
+        <div class="tab" onclick="setAba('financeiro')" id="tab-financeiro">Financeiro</div>
+        <div class="tab" onclick="setAba('fu')" id="tab-fu">Follow Up</div>
+        <div class="tab" onclick="setAba('forms')" id="tab-forms">Formulários</div>
+      </div>
+      <div id="aba-info"></div>
+      <div id="aba-financeiro" class="hidden"></div>
+      <div id="aba-fu" class="hidden"></div>
+      <div id="aba-forms" class="hidden"></div>
+    </div>
+
+    <!-- FORMULARIOS -->
+    <div id="page-formularios" class="hidden">
+      <div class="header">
+        <div class="page-title">Formulários</div>
+        <button class="btn btn-primary" onclick="openFormModal()">Novo formulário</button>
+      </div>
+      <div id="forms-lista"></div>
+    </div>
+
+    <!-- FOLLOW UP -->
+    <div id="page-followup" class="hidden">
+      <div class="header">
+        <div class="page-title">Follow Up</div>
+      </div>
+      <div class="filters" style="margin-bottom:16px;">
+        <div class="chip on" onclick="setFuFilter('todos',this)">Todos</div>
+        <div class="chip" onclick="setFuFilter('d1',this)">D+1</div>
+        <div class="chip" onclick="setFuFilter('d7',this)">D+7</div>
+        <div class="chip" onclick="setFuFilter('d15',this)">D+15</div>
+        <div class="chip" onclick="setFuFilter('d21',this)">D+21</div>
+        <div class="chip" onclick="setFuFilter('d30',this)">D+30</div>
+        <div class="chip" onclick="setFuFilter('pendente',this)">Pendentes</div>
+      </div>
+      <div id="fu-lista"></div>
+    </div>
+
+    <!-- FINANCEIRO -->
+    <div id="page-financeiro" class="hidden">
+      <div class="header">
+        <div class="page-title">Financeiro</div>
+        <button class="btn btn-primary" onclick="openPagModal()">Novo pagamento</button>
+      </div>
+      <div class="kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px;">
+        <div class="kpi"><div class="kpi-val" id="fin-total">R$ 0</div><div class="kpi-lbl">Total recebido</div></div>
+        <div class="kpi"><div class="kpi-val" id="fin-pend">R$ 0</div><div class="kpi-lbl">Pendente</div></div>
+        <div class="kpi"><div class="kpi-val" id="fin-atras">R$ 0</div><div class="kpi-lbl">Atrasado</div></div>
+      </div>
+      <div id="fin-lista"></div>
+    </div>
+
+    <!-- AGENTE IA -->
+    <div id="page-agente" class="hidden">
+      <div class="header">
+        <div class="page-title">Agente de IA</div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Prompt — Anamnese</div>
+          <div class="form-field">
+            <textarea id="prompt-anamnese" style="min-height:120px;">Você é um consultor fitness do DALVS TEAM. Analise a anamnese do aluno {nome} e envie uma mensagem motivacional e um plano inicial personalizado baseado nos dados:
+
+Objetivo: {objetivo}
+Peso: {peso}kg
+Altura: {altura}cm
+Restrições: {restricoes}
+Experiência: {experiencia}
+
+Responda em português, tom motivacional e profissional.</textarea>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Prompt — Quinzenal (D+15)</div>
+          <div class="form-field">
+            <textarea id="prompt-quinzenal" style="min-height:120px;">Você é um consultor fitness do DALVS TEAM. Analise o feedback quinzenal do aluno {nome}:
+
+Adesão treino: {adesao_treino}/5
+Adesão dieta: {adesao_dieta}/5
+Desafios: {desafios}
+Evolução: {evolucao}
+
+Dê feedback construtivo, elogie os pontos positivos e sugira ajustes específicos.</textarea>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Prompt — Mensal (D+30)</div>
+        <div class="form-field">
+          <textarea id="prompt-mensal" style="min-height:120px;">Você é um consultor fitness do DALVS TEAM. Analise a avaliação mensal do aluno {nome}:
+
+Peso: {peso_atual}kg (anterior: {peso_anterior}kg)
+Medidas: {medidas}
+Fotos: {fotos_enviadas}
+Treinos favoritos: {treinos}
+Objetivo próximo mês: {objetivo_proximo}
+
+Parabenize a evolução, aponte o que mudou e defina metas para o próximo ciclo.</textarea>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Simular resposta da IA</div>
+        <div class="grid-2">
+          <div>
+            <div class="form-field">
+              <label>Aluno</label>
+              <select id="ia-aluno"><option value="">Selecione...</option></select>
+            </div>
+            <div class="form-field">
+              <label>Tipo de formulário</label>
+              <select id="ia-tipo">
+                <option value="anamnese">Anamnese</option>
+                <option value="quinzenal">Quinzenal</option>
+                <option value="mensal">Mensal</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="simularIA()" style="margin-top:8px;">Gerar resposta da IA</button>
+          </div>
+          <div>
+            <div class="form-field">
+              <label>Resposta gerada</label>
+              <div class="ia-response" id="ia-resposta" style="min-height:120px;">Selecione um aluno e tipo para simular...</div>
+            </div>
+            <div class="modal-btns" style="margin-top:8px;">
+              <button class="btn" onclick="copiarIA()">Copiar resposta</button>
+              <button class="btn btn-success" onclick="dispararIA()">Disparar via D-API</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Configuração D-API (API não oficial WhatsApp)</div>
+        <div class="grid-2">
+          <div class="form-field">
+            <label>URL da D-API</label>
+            <input id="dapi-url" value="http://localhost:3001/api/send" placeholder="http://localhost:3001/api/send">
+          </div>
+          <div class="form-field">
+            <label>Token / API Key</label>
+            <input id="dapi-token" value="dalvs_token_123" type="password">
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--text-3);">
+          Configure a URL e token da sua instância D-API (API não oficial de WhatsApp).<br>
+          Exemplo: Evolution API, WhatsApp API não oficial, ou similar.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-body"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+let alunos = [
+  { id: 1, nome: 'Carlos Silva', email: 'carlos@email.com', whatsapp: '5511987654321', inicio: '2026-08-10', status: 'ativo', nascimento: '1995-03-15', cidade: 'São Paulo', objetivo: 'Hipertrofia' },
+  { id: 2, nome: 'Ana Paula Souza', email: 'ana@email.com', whatsapp: '5521998765432', inicio: '2026-08-03', status: 'ativo', nascimento: '1998-07-22', cidade: 'Rio de Janeiro', objetivo: 'Emagrecimento' },
+  { id: 3, nome: 'Bruno Costa', email: 'bruno@email.com', whatsapp: '5531912345678', inicio: '2026-07-25', status: 'ativo', nascimento: '1990-11-05', cidade: 'Belo Horizonte', objetivo: 'Definição' },
+  { id: 4, nome: 'Mariana Lima', email: 'mariana@email.com', whatsapp: '5541923456789', inicio: '2026-07-20', status: 'renovacao', nascimento: '1993-01-30', cidade: 'Curitiba', objetivo: 'Hipertrofia' },
+  { id: 5, nome: 'João Pedro', email: 'joao@email.com', whatsapp: '5551934567890', inicio: '2026-08-18', status: 'ativo', nascimento: '1997-09-12', cidade: 'Porto Alegre', objetivo: 'Resistência' },
+  { id: 6, nome: 'Fernanda Rocha', email: 'fernanda@email.com', whatsapp: '5511945678901', inicio: '2026-06-15', status: 'inativo', nascimento: '1992-05-08', cidade: 'São Paulo', objetivo: 'Emagrecimento' },
+];
+
+let formularios = [
+  { id: 1, tipo: 'anamnese', alunoId: 1, data: '2026-08-10', dados: { objetivo: 'Ganho de massa muscular', peso: '78', altura: '180', restricoes: 'Nenhuma', experiencia: 'Intermediário' } },
+  { id: 2, tipo: 'quinzenal', alunoId: 2, data: '2026-08-18', dados: { adesao_treino: '4', adesao_dieta: '5', desafios: 'Fins de semana com família', evolucao: 'Perdi 1kg, me sinto mais disposta' } },
+  { id: 3, tipo: 'mensal', alunoId: 3, data: '2026-08-24', dados: { peso_atual: '85', peso_anterior: '88', medidas: 'Cintura -3cm, Braço +1cm', fotos_enviadas: 'Sim', treinos: 'Supino, Agachamento', objetivo_proximo: 'Chegar a 82kg' } },
+  { id: 4, tipo: 'anamnese', alunoId: 5, data: '2026-08-18', dados: { objetivo: 'Corrida de 10km', peso: '70', altura: '175', restricoes: 'Intolerância à lactose', experiencia: 'Iniciante' } },
+];
+
+let pagamentos = [
+  { id: 1, alunoId: 1, valor: 400, data: '2026-08-10', vencimento: '2026-08-10', status: 'pago', descricao: 'Plano mensal' },
+  { id: 2, alunoId: 2, valor: 400, data: '2026-08-03', vencimento: '2026-08-03', status: 'pago', descricao: 'Plano mensal' },
+  { id: 3, alunoId: 3, valor: 400, data: '2026-07-25', vencimento: '2026-07-25', status: 'pago', descricao: 'Plano mensal' },
+  { id: 4, alunoId: 4, valor: 400, data: null, vencimento: '2026-08-20', status: 'pendente', descricao: 'Renovação mensal' },
+  { id: 5, alunoId: 5, valor: 400, data: null, vencimento: '2026-08-18', status: 'pendente', descricao: 'Plano mensal' },
+  { id: 6, alunoId: 6, valor: 400, data: '2026-06-15', vencimento: '2026-07-15', status: 'atrasado', descricao: 'Plano mensal' },
+];
+
+let fu = [
+  { id: 1, alunoId: 1, tipo: 'boasvindas', data: '2026-08-10', status: 'enviado' },
+  { id: 2, alunoId: 1, tipo: 'd7', data: '2026-08-17', status: 'enviado' },
+  { id: 3, alunoId: 2, tipo: 'boasvindas', data: '2026-08-03', status: 'enviado' },
+  { id: 4, alunoId: 2, tipo: 'd7', data: '2026-08-10', status: 'enviado' },
+  { id: 5, alunoId: 2, tipo: 'd15', data: '2026-08-18', status: 'enviado' },
+  { id: 6, alunoId: 3, tipo: 'boasvindas', data: '2026-07-25', status: 'enviado' },
+  { id: 7, alunoId: 3, tipo: 'd7', data: '2026-08-01', status: 'enviado' },
+  { id: 8, alunoId: 3, tipo: 'd15', data: '2026-08-09', status: 'enviado' },
+  { id: 9, alunoId: 3, tipo: 'd21', data: '2026-08-15', status: 'enviado' },
+  { id: 10, alunoId: 5, tipo: 'boasvindas', data: '2026-08-18', status: 'enviado' },
+  { id: 11, alunoId: 5, tipo: 'd1', data: '2026-08-19', status: 'pendente' },
+  { id: 12, alunoId: 1, tipo: 'd15', data: '2026-08-25', status: 'pendente' },
+  { id: 13, alunoId: 4, tipo: 'd30', data: '2026-08-19', status: 'pendente' },
+  { id: 14, alunoId: 4, tipo: 'd27', data: '2026-08-17', status: 'pendente' },
+];
+
+const MENSAGENS = {
+  d1: `Oi {nome}! Tudo bem?\n\nSeu treino e dieta já foram enviados. Qualquer dúvida, estamos aqui!\n\nBora com tudo 💪`,
+  d7: `Fala {nome}!\n\nJá se passou 1 semana desde que você entrou no DALVS TEAM 🚀\n\nIsso é um marco importante: muita gente desiste logo nos primeiros dias, mas você está aqui, firme e consistente.\n\nAgora é o momento de:\n✅ Manter o foco na rotina\n✅ Respeitar o processo (sem buscar resultado imediato)\n✅ Registrar dúvidas, porque vamos ajustando juntos.\n\nOrgulho de ter você no time 👊🔥\nBora continuar? O melhor ainda está por vir!`,
+  d15: `Oi {nome}! Tudo bem?\n\nJá se passaram 15 dias desde o início do seu plano no DALVS TEAM.\n\nPreciso que você preencha o formulário de feedback para avaliar:\n• Adesão ao treino\n• Adesão à dieta\n• Finais de semana\n• Dúvidas ou dificuldades\n• Percepção da evolução\n\nAssim que enviar, nossa equipe retorna em até 2h com análise e ajustes necessários.`,
+  d21: `{nome}, você já está com a gente há 3 semanas!\n\nIsso significa que você não está só testando: você está criando um novo estilo de vida.\n\n⚡ Depois de 21 dias, corpo e mente já sentem mudanças: mais energia, mais disposição e até os primeiros sinais físicos no shape.\n\nAgora o jogo é consistência → não parar, não desacelerar.\n\nContinue firme. O DALVS TEAM está contigo em cada passo 🔥\nO próximo ciclo promete ainda mais evolução 👊`,
+  d30: `Oi {nome}! Parabéns por completar 4 semanas no DALVS TEAM! 💪\n\nHora de atualizar seu plano:\n• Preencha o formulário de atualização de treinos e protocolo\n• Faça a Avaliação Check Shape\n• Nossa equipe ajustará treino e dieta conforme necessário\n\nO próximo mês promete resultados ainda melhores!`,
+  d27: `{nome}, faltam apenas 3 dias para o fim do seu plano mensal.\n\nReforço dos resultados já alcançados:\n• Você construiu uma rotina sólida\n• Seu corpo já respondeu positivamente\n• A consistência é o segredo\n\nImportante: a continuidade mantém a evolução. Renove agora de forma simples e rápida:\n[LINK PARA RENOVAÇÃO]`
+};
+
+const IA_RESPOSTAS = {
+  anamnese: {
+    1: `Fala Carlos! 💪\n\nAnalisamos sua anamnese e ficamos animados com seu perfil! Você tem 78kg para 1,80m — ótima base para hipertrofia.\n\nPlano inicial:\n• Foco em compostas: agachamento, levantamento terra, supino\n• Dieta com superávit calórico moderado (+300kcal)\n• 5 treinos/semana, split peito/costas/pernas\n\nSem restrições alimentares = mais flexibilidade no cardápio!\n\nBora transformar esse shape! 🔥`,
+    5: `Oi João Pedro! 🏃‍♂️\n\nSeu objetivo de corrida de 10km é incrível! Como iniciante, vamos construir sua base aeróbica com calma.\n\nPlano inicial:\n• 3x corrida leve por semana (progressão de 2km → 5km)\n• 2x musculação (pernas e core)\n• Dieta sem lactose, rica em carboidratos complexos\n\nSeu peso de 70kg é ideal — foco na resistência, não em perda!\n\nVamos juntos nessa! 👊`
+  },
+  quinzenal: {
+    2: `Oi Ana Paula! 🌟\n\nParabéns pela adesão à dieta (nota 5!) — isso é o que separa quem transforma de quem só tenta.\n\nFeedback:\n• Treino nota 4: ótimo! Tente não pular o dia de pernas 😉\n• Desafio nos fins de semana: normal! Sugestão: prepare refeições na sexta para o sábado/domingo\n• Evolução de 1kg em 2 semanas: ritmo perfeito!\n\nAjuste: vamos reduzir 100kcal no café da manhã para acelerar o déficit.\n\nContinue firme! 💪`
+  },
+  mensal: {
+    3: `Fala Bruno! 🚀\n\nRESULTADO DE 1 MÊS:\n• Peso: 88kg → 85kg (-3kg!)\n• Cintura: -3cm (definição chegando!)\n• Braço: +1cm (massa muscular preservada!)\n\nIsso é EXATAMENTE o que buscamos: perder gordura sem perder músculo.\n\nPróximo ciclo:\n• Manter o déficit calórico\n• Incluir HIIT 2x/semana\n• Meta: chegar a 82kg\n\nVocê está no caminho certo. O shape dos sonhos é questão de tempo! 🔥`
+  }
+};
+
+let paginaAtual = 'dashboard';
+let alunoFilter = 'todos';
+let fuFilter = 'todos';
+let alunoAtualId = null;
+let abaAtual = 'info';
+const hoje = new Date('2026-08-20');
+
+function diasDesde(inicio) {
+  const d = new Date(inicio);
+  return Math.floor((hoje - d) / 86400000);
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function go(page, alunoId) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('on'));
+  document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
+  if (document.getElementById('nav-' + page)) document.getElementById('nav-' + page).classList.add('on');
+  document.getElementById('page-' + page).classList.remove('hidden');
+  paginaAtual = page;
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'alunos') renderAlunos();
+  if (page === 'formularios') renderFormularios();
+  if (page === 'followup') renderFU();
+  if (page === 'financeiro') renderFinanceiro();
+  if (page === 'agente') renderAgente();
+  if (page === 'aluno-detalhe' && alunoId) { alunoAtualId = alunoId; renderAlunoDetalhe(); }
+}
+
+function renderDashboard() {
+  const ativos = alunos.filter(a => a.status === 'ativo').length;
+  const totalRec = pagamentos.filter(p => p.status === 'pago').reduce((s, p) => s + p.valor, 0);
+  document.getElementById('dash-total').textContent = alunos.length;
+  document.getElementById('dash-ativo').textContent = ativos;
+  document.getElementById('dash-receita').textContent = 'R$ ' + totalRec.toLocaleString('pt-BR');
+
+  const pendentesHoje = [];
+  alunos.forEach(a => {
+    const d = diasDesde(a.inicio);
+    const env = fu.filter(f => f.alunoId === a.id && f.status === 'enviado').map(f => f.tipo);
+    if (d >= 1 && !env.includes('d1') && a.status === 'ativo') pendentesHoje.push({ nome: a.nome, tipo: 'D+1', msg: 'Check-in inicial' });
+    if (d >= 7 && !env.includes('d7') && a.status === 'ativo') pendentesHoje.push({ nome: a.nome, tipo: 'D+7', msg: 'Motivacional 1 semana' });
+    if (d >= 15 && !env.includes('d15') && a.status === 'ativo') pendentesHoje.push({ nome: a.nome, tipo: 'D+15', msg: 'Feedback quinzenal' });
+    if (d >= 21 && !env.includes('d21') && a.status === 'ativo') pendentesHoje.push({ nome: a.nome, tipo: 'D+21', msg: 'Consolidação' });
+    if (d >= 27 && !env.includes('d27')) pendentesHoje.push({ nome: a.nome, tipo: 'D-3', msg: 'Lembrete renovação' });
+    if (d >= 30 && !env.includes('d30') && a.status === 'ativo') pendentesHoje.push({ nome: a.nome, tipo: 'D+30', msg: 'Atualização mensal' });
+  });
+  document.getElementById('dash-pend').textContent = pendentesHoje.length;
+
+  document.getElementById('dash-acoes').innerHTML = pendentesHoje.length ? pendentesHoje.map(p =>
+    `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div><div style="font-size:13px;font-weight:500;">${p.nome}</div><div style="font-size:11px;color:var(--text-3);">${p.msg}</div></div>
+      <div class="badge bg-yellow">${p.tipo}</div>
+    </div>`
+  ).join('') : '<div class="empty">Nenhuma ação pendente hoje</div>';
+
+  const etapas = { 'Novo (D0-7)': 0, 'Meio (D8-21)': 0, 'Renovação (D22+)': 0, 'Inativo': 0 };
+  alunos.forEach(a => {
+    const d = diasDesde(a.inicio);
+    if (a.status === 'inativo') etapas['Inativo']++;
+    else if (d <= 7) etapas['Novo (D0-7)']++;
+    else if (d <= 21) etapas['Meio (D8-21)']++;
+    else etapas['Renovação (D22+)']++;
+  });
+  document.getElementById('dash-etapas').innerHTML = Object.entries(etapas).map(([k, v]) =>
+    `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;">${k}</span><span style="font-size:14px;font-weight:500;">${v}</span>
+    </div>`
+  ).join('');
+}
+
+function renderAlunos() {
+  const s = document.getElementById('aluno-search').value.toLowerCase();
+  let lista = alunos.filter(a => a.nome.toLowerCase().includes(s) || a.email.toLowerCase().includes(s));
+  if (alunoFilter !== 'todos') lista = lista.filter(a => a.status === alunoFilter);
+
+  document.getElementById('alunos-lista').innerHTML = lista.length ?
+    `<table class="table"><thead><tr><th>Aluno</th><th>WhatsApp</th><th>Início</th><th>Dias</th><th>Status</th><th>Ações</th></tr></thead><tbody>` +
+    lista.map(a => {
+      const d = diasDesde(a.inicio);
+      const badge = a.status === 'ativo' ? 'bg-green' : a.status === 'renovacao' ? 'bg-yellow' : 'bg-gray';
+      const statusLabel = a.status === 'ativo' ? 'Ativo' : a.status === 'renovacao' ? 'Renovação' : 'Inativo';
+      return `<tr>
+        <td><div class="row-flex"><div class="avatar-sm">${a.nome.split(' ').map(n=>n[0]).join('').substring(0,2)}</div><div><div style="font-weight:500;font-size:13px;">${a.nome}</div><div style="font-size:11px;color:var(--text-3);">${a.email}</div></div></div></td>
+        <td style="font-size:12px;">${a.whatsapp}</td>
+        <td style="font-size:12px;">${a.inicio}</td>
+        <td style="font-size:12px;">D+${d}</td>
+        <td><span class="badge ${badge}">${statusLabel}</span></td>
+        <td>
+          <button class="btn" style="padding:4px 8px;font-size:12px;" onclick="go('aluno-detalhe',${a.id})">Ver</button>
+          <button class="btn" style="padding:4px 8px;font-size:12px;" onclick="openAlunoModal(${a.id})">Editar</button>
+          <button class="btn btn-danger" style="padding:4px 8px;font-size:12px;" onclick="excluirAluno(${a.id})">Excluir</button>
+        </td>
+      </tr>`;
+    }).join('') + '</tbody></table>' : '<div class="empty">Nenhum aluno encontrado</div>';
+}
+
+function setAlunoFilter(f, el) {
+  alunoFilter = f;
+  document.querySelectorAll('#aluno-filters .chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  renderAlunos();
+}
+
+function excluirAluno(id) {
+  if (!confirm('Excluir aluno?')) return;
+  alunos = alunos.filter(a => a.id !== id);
+  pagamentos = pagamentos.filter(p => p.alunoId !== id);
+  fu = fu.filter(f => f.alunoId !== id);
+  formularios = formularios.filter(f => f.alunoId !== id);
+  renderAlunos();
+  toast('Aluno removido');
+}
+
+function openAlunoModal(id) {
+  const a = id ? alunos.find(x => x.id === id) : null;
+  document.getElementById('modal-body').innerHTML = `
+    <h3>${id ? 'Editar' : 'Novo'} aluno</h3>
+    <div class="form-field"><label>Nome</label><input id="m-nome" value="${a ? a.nome : ''}"></div>
+    <div class="form-field"><label>Email</label><input id="m-email" value="${a ? a.email : ''}" type="email"></div>
+    <div class="form-field"><label>WhatsApp</label><input id="m-whatsapp" value="${a ? a.whatsapp : ''}" placeholder="5511999999999"></div>
+    <div class="form-field"><label>Data de início</label><input id="m-inicio" type="date" value="${a ? a.inicio : '2026-08-20'}"></div>
+    <div class="form-field"><label>Status</label><select id="m-status"><option value="ativo" ${a && a.status==='ativo'?'selected':''}>Ativo</option><option value="inativo" ${a && a.status==='inativo'?'selected':''}>Inativo</option><option value="renovacao" ${a && a.status==='renovacao'?'selected':''}>Renovação</option></select></div>
+    <div class="form-field"><label>Objetivo</label><input id="m-objetivo" value="${a ? a.objetivo : ''}"></div>
+    <div class="form-field"><label>Cidade</label><input id="m-cidade" value="${a ? a.cidade : ''}"></div>
+    <div class="modal-btns"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarAluno(${id || 0})">Salvar</button></div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function salvarAluno(id) {
+  const nome = document.getElementById('m-nome').value.trim();
+  if (!nome) { toast('Preencha o nome'); return; }
+  const dados = {
+    nome, email: document.getElementById('m-email').value,
+    whatsapp: document.getElementById('m-whatsapp').value,
+    inicio: document.getElementById('m-inicio').value,
+    status: document.getElementById('m-status').value,
+    objetivo: document.getElementById('m-objetivo').value,
+    cidade: document.getElementById('m-cidade').value
+  };
+  if (id) { const a = alunos.find(x => x.id === id); Object.assign(a, dados); toast('Aluno atualizado'); }
+  else { alunos.unshift({ id: Math.max(...alunos.map(x=>x.id))+1, ...dados }); toast('Aluno cadastrado'); }
+  closeModal();
+  if (paginaAtual === 'alunos') renderAlunos();
+  if (paginaAtual === 'aluno-detalhe') renderAlunoDetalhe();
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+function renderAlunoDetalhe() {
+  const a = alunos.find(x => x.id === alunoAtualId);
+  if (!a) return;
+  document.getElementById('det-nome').textContent = a.nome;
+  const d = diasDesde(a.inicio);
+
+  document.getElementById('aba-info').innerHTML = `
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Dados pessoais</div>
+        <div style="font-size:13px;color:var(--text-2);line-height:2;">
+          <div><strong style="color:var(--text);">Nome:</strong> ${a.nome}</div>
+          <div><strong style="color:var(--text);">Email:</strong> ${a.email}</div>
+          <div><strong style="color:var(--text);">WhatsApp:</strong> ${a.whatsapp}</div>
+          <div><strong style="color:var(--text);">Cidade:</strong> ${a.cidade || '—'}</div>
+          <div><strong style="color:var(--text);">Objetivo:</strong> ${a.objetivo || '—'}</div>
+          <div><strong style="color:var(--text);">Data início:</strong> ${a.inicio}</div>
+          <div><strong style="color:var(--text);">Dias no plano:</strong> D+${d}</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Progresso no workflow</div>
+        <div class="pipe-bar">
+          ${[0,3,7,15,21,30,27].map(dia => `<div class="pipe-seg ${d >= dia ? 'done' : 'wait'}"></div>`).join('')}
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);margin-top:4px;">
+          <span>Início</span><span>Treino</span><span>D+7</span><span>D+15</span><span>D+21</span><span>D+30</span><span>Renova</span>
+        </div>
+      </div>
+    </div>`;
+
+  const pagAluno = pagamentos.filter(p => p.alunoId === a.id);
+  document.getElementById('aba-financeiro').innerHTML = pagAluno.length ?
+    `<table class="table"><thead><tr><th>Descrição</th><th>Vencimento</th><th>Valor</th><th>Status</th></tr></thead><tbody>` +
+    pagAluno.map(p => {
+      const badge = p.status === 'pago' ? 'bg-green' : p.status === 'pendente' ? 'bg-yellow' : 'bg-red';
+      return `<tr><td>${p.descricao}</td><td>${p.vencimento}</td><td>R$ ${p.valor}</td><td><span class="badge ${badge}">${p.status}</span></td></tr>`;
+    }).join('') + '</tbody></table>' : '<div class="empty">Nenhum pagamento registrado</div>';
+
+  const fuAluno = fu.filter(f => f.alunoId === a.id).sort((a,b) => new Date(a.data) - new Date(b.data));
+  document.getElementById('aba-fu').innerHTML = fuAluno.length ?
+    `<div class="timeline">` + fuAluno.map(f => {
+      const msg = MENSAGENS[f.tipo] ? MENSAGENS[f.tipo].replace(/{nome}/g, a.nome) : '';
+      return `<div class="tl-item">
+        <div class="tl-dot ${f.status==='enviado'?'done':f.status==='pendente'?'current':''}"></div>
+        <div class="tl-date">${f.data} — ${f.tipo.toUpperCase()}</div>
+        <div class="tl-title">${f.status==='enviado'?'Enviado':'Pendente'}</div>
+        ${f.status==='enviado' ? `<div class="tl-desc" style="white-space:pre-wrap;">${msg.substring(0,120)}...</div>` : ''}
+      </div>`;
+    }).join('') + '</div>' : '<div class="empty">Nenhum follow up registrado</div>';
+
+  const formsAluno = formularios.filter(f => f.alunoId === a.id);
+  document.getElementById('aba-forms').innerHTML = formsAluno.length ?
+    formsAluno.map(f => {
+      const campos = Object.entries(f.dados).map(([k,v]) => `<div style="font-size:12px;margin:4px 0;"><strong style="color:var(--text);">${k.replace(/_/g,' ')}:</strong> ${v}</div>`).join('');
+      return `<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div class="card-title">${f.tipo.charAt(0).toUpperCase()+f.tipo.slice(1)} — ${f.data}</div>
+          <span class="badge bg-blue">${f.tipo}</span>
+        </div>
+        ${campos}
+      </div>`;
+    }).join('') : '<div class="empty">Nenhum formulário preenchido</div>';
+}
+
+function setAba(aba) {
+  abaAtual = aba;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('tab-' + aba).classList.add('on');
+  ['info','financeiro','fu','forms'].forEach(a => document.getElementById('aba-' + a).classList.add('hidden'));
+  document.getElementById('aba-' + aba).classList.remove('hidden');
+}
+
+function renderFormularios() {
+  document.getElementById('forms-lista').innerHTML = formularios.length ?
+    formularios.map(f => {
+      const a = alunos.find(x => x.id === f.alunoId);
+      return `<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div class="card-title">${f.tipo.charAt(0).toUpperCase()+f.tipo.slice(1)} — ${a ? a.nome : 'Aluno #' + f.alunoId}</div>
+          <div style="display:flex;gap:6px;">
+            <span class="badge bg-blue">${f.tipo}</span>
+            <span class="badge bg-gray">${f.data}</span>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-3);">
+          ${Object.entries(f.dados).slice(0,3).map(([k,v]) => `${k.replace(/_/g,' ')}: ${v}`).join(' • ')}
+        </div>
+      </div>`;
+    }).join('') : '<div class="empty">Nenhum formulário cadastrado</div>';
+}
+
+function openFormModal() {
+  const opts = alunos.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+  document.getElementById('modal-body').innerHTML = `
+    <h3>Novo formulário</h3>
+    <div class="form-field"><label>Aluno</label><select id="f-aluno">${opts}</select></div>
+    <div class="form-field"><label>Tipo</label><select id="f-tipo"><option value="anamnese">Anamnese</option><option value="quinzenal">Quinzenal</option><option value="mensal">Mensal</option></select></div>
+    <div class="form-field"><label>Data</label><input id="f-data" type="date" value="2026-08-20"></div>
+    <div id="f-campos"></div>
+    <div class="modal-btns"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarFormulario()">Salvar</button></div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+  atualizarCamposForm();
+  document.getElementById('f-tipo').addEventListener('change', atualizarCamposForm);
+}
+
+function atualizarCamposForm() {
+  const tipo = document.getElementById('f-tipo').value;
+  const campos = {
+    anamnese: ['objetivo','peso','altura','restricoes','experiencia'],
+    quinzenal: ['adesao_treino','adesao_dieta','desafios','evolucao'],
+    mensal: ['peso_atual','peso_anterior','medidas','fotos_enviadas','treinos','objetivo_proximo']
+  };
+  document.getElementById('f-campos').innerHTML = campos[tipo].map(c =>
+    `<div class="form-field"><label>${c.replace(/_/g,' ').charAt(0).toUpperCase()+c.replace(/_/g,' ').slice(1)}</label><input id="f-${c}" placeholder="Resposta..."></div>`
+  ).join('');
+}
+
+function salvarFormulario() {
+  const tipo = document.getElementById('f-tipo').value;
+  const alunoId = parseInt(document.getElementById('f-aluno').value);
+  const data = document.getElementById('f-data').value;
+  const campos = {
+    anamnese: ['objetivo','peso','altura','restricoes','experiencia'],
+    quinzenal: ['adesao_treino','adesao_dieta','desafios','evolucao'],
+    mensal: ['peso_atual','peso_anterior','medidas','fotos_enviadas','treinos','objetivo_proximo']
+  };
+  const dados = {};
+  campos[tipo].forEach(c => { dados[c] = document.getElementById('f-'+c).value; });
+  formularios.push({ id: formularios.length+1, tipo, alunoId, data, dados });
+  closeModal(); renderFormularios(); toast('Formulário salvo');
+}
+function renderFU() {
+  let lista = fu.slice();
+  if (fuFilter !== 'todos') {
+    if (fuFilter === 'pendente') lista = lista.filter(f => f.status === 'pendente');
+    else lista = lista.filter(f => f.tipo === fuFilter);
+  }
+  lista.sort((a,b) => new Date(b.data) - new Date(a.data));
+
+  document.getElementById('fu-lista').innerHTML = lista.length ?
+    `<table class="table"><thead><tr><th>Aluno</th><th>Tipo</th><th>Data</th><th>Status</th><th>Mensagem</th><th>Ação</th></tr></thead><tbody>` +
+    lista.map(f => {
+      const a = alunos.find(x => x.id === f.alunoId);
+      const msg = MENSAGENS[f.tipo] ? MENSAGENS[f.tipo].replace(/{nome}/g, a ? a.nome : '') : '';
+      const statusBadge = f.status === 'enviado' ? 'bg-green' : 'bg-yellow';
+      return `<tr>
+        <td><div class="row-flex"><div class="avatar-sm">${a ? a.nome.split(' ').map(n=>n[0]).join('').substring(0,2) : '?'}</div><div style="font-size:13px;">${a ? a.nome : 'Aluno #' + f.alunoId}</div></div></td>
+        <td><span class="badge bg-blue">${f.tipo.toUpperCase()}</span></td>
+        <td style="font-size:12px;">${f.data}</td>
+        <td><span class="badge ${statusBadge}">${f.status}</span></td>
+        <td style="font-size:11px;color:var(--text-3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${msg.substring(0,60)}...</td>
+        <td>
+          ${f.status === 'pendente' ? `<button class="btn btn-primary" style="padding:4px 8px;font-size:12px;" onclick="enviarFU(${f.id})">Enviar</button>` : '<span style="font-size:12px;color:var(--text-3);">—</span>'}
+        </td>
+      </tr>`;
+    }).join('') + '</tbody></table>' : '<div class="empty">Nenhum follow up encontrado</div>';
+}
+
+function setFuFilter(f, el) {
+  fuFilter = f;
+  document.querySelectorAll('#page-followup .chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  renderFU();
+}
+
+function enviarFU(id) {
+  const f = fu.find(x => x.id === id);
+  if (!f) return;
+  const a = alunos.find(x => x.id === f.alunoId);
+  const msg = MENSAGENS[f.tipo].replace(/{nome}/g, a.nome);
+  f.status = 'enviado';
+  renderFU();
+  toast('Mensagem enviada para ' + a.nome);
+  // Aqui integraria com D-API:
+  // fetch(dapiUrl, { method: 'POST', headers: { 'Authorization': dapiToken }, body: JSON.stringify({ to: a.whatsapp, message: msg }) })
+}
+
+function renderFinanceiro() {
+  const totalRec = pagamentos.filter(p => p.status === 'pago').reduce((s, p) => s + p.valor, 0);
+  const totalPend = pagamentos.filter(p => p.status === 'pendente').reduce((s, p) => s + p.valor, 0);
+  const totalAtras = pagamentos.filter(p => p.status === 'atrasado').reduce((s, p) => s + p.valor, 0);
+  document.getElementById('fin-total').textContent = 'R$ ' + totalRec.toLocaleString('pt-BR');
+  document.getElementById('fin-pend').textContent = 'R$ ' + totalPend.toLocaleString('pt-BR');
+  document.getElementById('fin-atras').textContent = 'R$ ' + totalAtras.toLocaleString('pt-BR');
+
+  document.getElementById('fin-lista').innerHTML = pagamentos.length ?
+    `<table class="table"><thead><tr><th>Aluno</th><th>Descrição</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody>` +
+    pagamentos.map(p => {
+      const a = alunos.find(x => x.id === p.alunoId);
+      const badge = p.status === 'pago' ? 'bg-green' : p.status === 'pendente' ? 'bg-yellow' : 'bg-red';
+      return `<tr>
+        <td>${a ? a.nome : 'Aluno #' + p.alunoId}</td>
+        <td>${p.descricao}</td>
+        <td style="font-size:12px;">${p.vencimento}</td>
+        <td style="font-size:12px;">R$ ${p.valor}</td>
+        <td><span class="badge ${badge}">${p.status}</span></td>
+        <td>
+          ${p.status !== 'pago' ? `<button class="btn btn-success" style="padding:4px 8px;font-size:12px;" onclick="marcarPago(${p.id})">Marcar pago</button>` : ''}
+          <button class="btn btn-danger" style="padding:4px 8px;font-size:12px;" onclick="excluirPag(${p.id})">Excluir</button>
+        </td>
+      </tr>`;
+    }).join('') + '</tbody></table>' : '<div class="empty">Nenhum pagamento registrado</div>';
+}
+
+function marcarPago(id) {
+  const p = pagamentos.find(x => x.id === id);
+  if (p) { p.status = 'pago'; p.data = '2026-08-20'; renderFinanceiro(); toast('Pagamento confirmado'); }
+}
+
+function excluirPag(id) {
+  if (!confirm('Excluir pagamento?')) return;
+  pagamentos = pagamentos.filter(p => p.id !== id);
+  renderFinanceiro();
+  toast('Pagamento removido');
+}
+
+function openPagModal() {
+  const opts = alunos.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+  document.getElementById('modal-body').innerHTML = `
+    <h3>Novo pagamento</h3>
+    <div class="form-field"><label>Aluno</label><select id="p-aluno">${opts}</select></div>
+    <div class="form-field"><label>Descrição</label><input id="p-desc" value="Plano mensal"></div>
+    <div class="form-field"><label>Valor</label><input id="p-valor" type="number" value="400"></div>
+    <div class="form-field"><label>Vencimento</label><input id="p-venc" type="date" value="2026-08-20"></div>
+    <div class="form-field"><label>Status</label><select id="p-status"><option value="pago">Pago</option><option value="pendente" selected>Pendente</option><option value="atrasado">Atrasado</option></select></div>
+    <div class="modal-btns"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarPagamento()">Salvar</button></div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function salvarPagamento() {
+  pagamentos.push({
+    id: pagamentos.length + 1,
+    alunoId: parseInt(document.getElementById('p-aluno').value),
+    valor: parseInt(document.getElementById('p-valor').value),
+    data: document.getElementById('p-status').value === 'pago' ? '2026-08-20' : null,
+    vencimento: document.getElementById('p-venc').value,
+    status: document.getElementById('p-status').value,
+    descricao: document.getElementById('p-desc').value
+  });
+  closeModal(); renderFinanceiro(); toast('Pagamento registrado');
+}
+
+function renderAgente() {
+  const opts = alunos.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+  document.getElementById('ia-aluno').innerHTML = '<option value="">Selecione...</option>' + opts;
+}
+
+function simularIA() {
+  const alunoId = parseInt(document.getElementById('ia-aluno').value);
+  const tipo = document.getElementById('ia-tipo').value;
+  if (!alunoId) { toast('Selecione um aluno'); return; }
+  const resposta = IA_RESPOSTAS[tipo] && IA_RESPOSTAS[tipo][alunoId] ? IA_RESPOSTAS[tipo][alunoId] : 'Resposta da IA será gerada aqui com base no prompt e nos dados do formulário preenchido.\n\nNa versão final, isso chamará a API do ChatGPT/Claude com o prompt + dados do formulário.';
+  document.getElementById('ia-resposta').textContent = resposta;
+}
+
+function copiarIA() {
+  const txt = document.getElementById('ia-resposta').textContent;
+  navigator.clipboard.writeText(txt).then(() => toast('Copiado!'));
+}
+
+async function dispararIA() {
+  const alunoId = parseInt(document.getElementById('ia-aluno').value);
+  const tipo = document.getElementById('ia-tipo').value;
+  const dapiUrl = document.getElementById('dapi-url').value;
+  const dapiToken = document.getElementById('dapi-token').value;
+  if (!alunoId) { toast('Selecione um aluno'); return; }
+  const a = alunos.find(x => x.id === alunoId);
+  const msg = document.getElementById('ia-resposta').textContent;
+
+  // Simulação de disparo D-API
+  toast('Disparando via D-API para ' + a.whatsapp + '...');
+
+  // Código real de integração (descomente quando tiver a D-API):
+  /*
+  try {
+    const res = await fetch(dapiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + dapiToken },
+      body: JSON.stringify({ number: a.whatsapp, text: msg })
+    });
+    const data = await res.json();
+    if (data.success) toast('Mensagem enviada com sucesso!');
+    else toast('Erro: ' + data.error);
+  } catch(e) { toast('Erro na D-API: ' + e.message); }
+  */
+}
+
+// Inicialização
+go('dashboard');
+</script>
+</body>
+</html>
